@@ -7,11 +7,11 @@ https://git-scm.com/downloads
 
 Abra o Git Bash na pasta onde o script está salvo.
 
-Salve o script como: create-hexagonal-api.sh
+Salve o script com o nome desejado, exemplo: create-hexagonal-api.sh
 
-Dê permissão de execução (opcional no Windows, mas seguro): chmod +x create-hexagonal-api.sh
+Dê permissão de execução (opcional no Windows, mas seguro): **__chmod +x create-hexagonal-api.sh__**
 
-Execute o script: ./create-hexagonal-api.sh
+Execute o script: **__./create-hexagonal-api.sh NomeSolucao__**
 
 ✅ Pré-requisitos
 
@@ -19,6 +19,6 @@ Certifique-se de que:
 
 O .NET SDK está instalado e acessível no terminal (dotnet --version)
 
-O terminal tem permissão para criar arquivos e pastas
+O terminal tem permissão para criar arquivos e pastas 
 
-Você executa o script em uma pasta vazia ou dedicada ao projeto
+
