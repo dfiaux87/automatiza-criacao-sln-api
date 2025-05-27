@@ -1,6 +1,19 @@
 #!/bin/bash
 
-SOLUTION_NAME="HexagonalApi"
+#
+#
+#
+#
+#
+
+# Verifica se o nome do projeto foi passado como argumento
+if [ -z "$1" ]; then
+  echo "❌ Você precisa informar o nome do projeto. Exemplo:"
+  echo "   ./create-hexagonal-api.sh NomeDoProjeto"
+  exit 1
+fi
+
+SOLUTION_NAME=$1
 BASE_DIR=$(pwd)/$SOLUTION_NAME
 
 echo "Criando diretório do projeto em: $BASE_DIR"
@@ -20,6 +33,8 @@ mkdir -p "$UI_DIR"
 mkdir -p "$BUSINESS_DIR/0 - Application"
 mkdir -p "$BUSINESS_DIR/1 - Domain"
 mkdir -p "$INFRA_DIR/0 - Data"
+mkdir -p "$INFRA_DIR/1 - CrossCutting"
+mkdir -p "$INFRA_DIR/2 - IOC"
 mkdir -p "$TESTS_DIR"
 
 cd "$BASE_DIR"
@@ -30,6 +45,7 @@ dotnet new webapi -n WebApi -o "$UI_DIR/WebApi"
 dotnet new classlib -n Application -o "$BUSINESS_DIR/0 - Application"
 dotnet new classlib -n Domain -o "$BUSINESS_DIR/1 - Domain"
 dotnet new classlib -n Data -o "$INFRA_DIR/0 - Data"
+dotnet new classlib -n IOC -o "$INFRA_DIR/2 - IOC"
 dotnet new xunit -n Application.Tests -o "$TESTS_DIR/Application.Tests"
 
 echo "Criando pastas auxiliares na API..."
@@ -37,6 +53,32 @@ mkdir -p "$UI_DIR/WebApi/Controllers"
 mkdir -p "$UI_DIR/WebApi/Middlewares"
 mkdir -p "$UI_DIR/WebApi/Extensions"
 mkdir -p "$UI_DIR/WebApi/Routes"
+
+cat <<EOF> "$UI_DIR/WebApi/Controllers/ExemploControllers.cs"
+using Microsoft.AspNetCore.Mvc;
+using Application.Exemplo;
+
+namespace WebApi.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class ExemploController : ControllerBase
+{
+    private readonly ExemploApplication _exemploApplication;
+
+    public ExemploController(ExemploApplication exemploApplication)
+    {
+        _exemploApplication = exemploApplication;
+    }
+
+    [HttpGet]
+    public IActionResult Get()
+    {
+        var resultado = _exemploApplication.Executar();
+        return Ok(new { mensagem = resultado });
+    }
+}
+EOF
 
 cat <<EOF > "$UI_DIR/WebApi/Middlewares/ExceptionHandlingMiddleware.cs"
 using System.Net;
@@ -100,12 +142,33 @@ for MODULE in "${MODULES[@]}"; do
     mkdir -p "$MODULE_DIR/Validators"
     mkdir -p "$MODULE_DIR/Mappers"
 
-    cat <<EOF > "$MODULE_DIR/${MODULE}Application.cs"
+cat <<EOF > "$MODULE_DIR/${MODULE}Application.cs"
 namespace Application.$MODULE;
 
 public class ${MODULE}Application
 {
     public string Executar() => "$MODULE executado com sucesso!";
+}
+EOF
+
+# Criar a classe DependencyResolver em Infrastructure.IOC
+cat <<EOF> "2 - Infrastructure/2 - IOC/DependencyResolver.cs" 
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace Ioc
+{
+    public static class DependencyResolver
+    {
+        public static IServiceCollection ResolveDependencies(this IServiceCollection services, IConfiguration configuration)
+        {
+            services.AddSingleton(configuration);
+
+            // services.AddScoped<IExemploApplication, ExemploApplication>();
+
+            return services;
+        }
+    }
 }
 EOF
 done
@@ -132,6 +195,7 @@ dotnet sln add "$UI_DIR/WebApi/WebApi.csproj"
 dotnet sln add "$BUSINESS_DIR/0 - Application/Application.csproj"
 dotnet sln add "$BUSINESS_DIR/1 - Domain/Domain.csproj"
 dotnet sln add "$INFRA_DIR/0 - Data/Data.csproj"
+dotnet sln add "$INFRA_DIR/2 - IOC/IOC.csproj"
 dotnet sln add "$TESTS_DIR/Application.Tests/Application.Tests.csproj"
 
 echo " Adicionando referências entre projetos..."
@@ -141,5 +205,11 @@ dotnet add "$INFRA_DIR/0 - Data/Data.csproj" reference "$BUSINESS_DIR/0 - Applic
 dotnet add "$INFRA_DIR/0 - Data/Data.csproj" reference "$BUSINESS_DIR/1 - Domain/Domain.csproj"
 dotnet add "$TESTS_DIR/Application.Tests/Application.Tests.csproj" reference "$BUSINESS_DIR/0 - Application/Application.csproj"
 dotnet add "$TESTS_DIR/Application.Tests/Application.Tests.csproj" reference "$INFRA_DIR/0 - Data/Data.csproj"
+
+
+# Adicionando pacotes NuGet à Infrastructure.IOC
+echo "📦 Instalando pacotes NuGet em Infrastructure.IOC..."
+dotnet add "$INFRA_DIR/2 - IOC/IOC.csproj" package Microsoft.Extensions.Configuration.Abstractions
+dotnet add "$INFRA_DIR/2 - IOC/IOC.csproj" package Microsoft.Extensions.DependencyInjection.Abstractions
 
 echo "Estrutura completa com múltiplos módulos, camadas organizadas, e classes de exemplo criada com sucesso!"
