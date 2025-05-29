@@ -1,19 +1,19 @@
 #!/bin/bash
 
-#
-#
-#
-#
-#
+#Validação da entrada de parâmetros obrigatórios
 
-# Verifica se o nome do projeto foi passado como argumento
-if [ -z "$1" ]; then
-  echo "❌ Você precisa informar o nome do projeto. Exemplo:"
-  echo "   ./create-hexagonal-api.sh NomeDoProjeto"
+if [ $# -lt 2 ]; then
+  echo "❌ Nome e versão do projeto devem ser informados."
+  echo "   Exemplo: ./criar_soluçao.sh WebApi net8.0"
   exit 1
 fi
 
 SOLUTION_NAME=$1
+VERSAO_DOTNET=$2
+
+# Criação do projeto
+echo "Criando projeto Web API chamado '$NOME_PROJETO' com .NET versão '$VERSAO_DOTNET'..."
+
 BASE_DIR=$(pwd)/$SOLUTION_NAME
 
 echo "Criando diretório do projeto em: $BASE_DIR"
@@ -41,7 +41,7 @@ cd "$BASE_DIR"
 dotnet new sln -n "$SOLUTION_NAME"
 
 echo "Criando projetos..."
-dotnet new webapi -n WebApi -o "$UI_DIR/WebApi"
+dotnet new webapi -n WebApi -o "$UI_DIR/WebApi" --framework "$VERSAO_DOTNET"
 dotnet new classlib -n Application -o "$BUSINESS_DIR/0 - Application"
 dotnet new classlib -n Domain -o "$BUSINESS_DIR/1 - Domain"
 dotnet new classlib -n Data -o "$INFRA_DIR/0 - Data"
@@ -187,6 +187,31 @@ mkdir -p "$INFRA_DIR/0 - Data/ExternalServices"
 mkdir -p "$INFRA_DIR/0 - Data/Configurations"
 mkdir -p "$INFRA_DIR/0 - Data/Migrations"
 mkdir -p "$INFRA_DIR/0 - Data/Adapters"
+mkdir -p "$INFRA_DIR/0 - Data/Connections"
+
+cat <<EOF> "$INFRA_DIR/0 - Data/Connections/ConnectionBase.cs"
+using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Configuration;
+using System.Data;
+
+namespace Data.Connections
+{
+   
+    public class ConnectionBase
+    {
+        private readonly IConfiguration _configuration;
+        public ConnectionBase(IConfiguration configuration)
+        {
+            _configuration = configuration;
+        }
+
+        public IDbConnection Connection =>
+            new SqlConnection(_configuration.GetConnectionString("db_connection"));
+    }
+    
+}
+
+EOF
 
 mkdir -p "$TESTS_DIR/Application.Tests/UseCases"
 
@@ -200,6 +225,7 @@ dotnet sln add "$TESTS_DIR/Application.Tests/Application.Tests.csproj"
 
 echo " Adicionando referências entre projetos..."
 dotnet add "$UI_DIR/WebApi/WebApi.csproj" reference "$BUSINESS_DIR/0 - Application/Application.csproj"
+dotnet add "$UI_DIR/WebApi/WebApi.csproj" reference "$INFRA_DIR/2 - IOC/IOC.csproj"
 dotnet add "$BUSINESS_DIR/0 - Application/Application.csproj" reference "$BUSINESS_DIR/1 - Domain/Domain.csproj"
 dotnet add "$INFRA_DIR/0 - Data/Data.csproj" reference "$BUSINESS_DIR/0 - Application/Application.csproj"
 dotnet add "$INFRA_DIR/0 - Data/Data.csproj" reference "$BUSINESS_DIR/1 - Domain/Domain.csproj"
@@ -211,5 +237,10 @@ dotnet add "$TESTS_DIR/Application.Tests/Application.Tests.csproj" reference "$I
 echo "📦 Instalando pacotes NuGet em Infrastructure.IOC..."
 dotnet add "$INFRA_DIR/2 - IOC/IOC.csproj" package Microsoft.Extensions.Configuration.Abstractions
 dotnet add "$INFRA_DIR/2 - IOC/IOC.csproj" package Microsoft.Extensions.DependencyInjection.Abstractions
+
+echo "📦 Instalando pacotes NuGet em Infrastructure.Data..."
+dotnet add "$INFRA_DIR/0 - Data/Data.csproj" package Dapper
+dotnet add "$INFRA_DIR/0 - Data/Data.csproj" package Microsoft.Data.SqlClient
+dotnet add "$INFRA_DIR/0 - Data/Data.csproj" package Microsoft.Extensions.Configuration.Abstractions
 
 echo "Estrutura completa com múltiplos módulos, camadas organizadas, e classes de exemplo criada com sucesso!"
