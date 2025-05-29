@@ -11,7 +11,7 @@ Salve o script com o nome desejado, exemplo: create-hexagonal-api.sh
 
 Dê permissão de execução (opcional no Windows, mas seguro): **__chmod +x create-hexagonal-api.sh__**
 
-Execute o script: **__./create-hexagonal-api.sh NomeSolucao__**
+Execute o script passando o nome da solução e a versão do dotnet: **__./create-hexagonal-api.sh NomeSolucao net9.0__**
 
 ✅ Pré-requisitos
 
@@ -20,5 +20,6 @@ Certifique-se de que:
 O .NET SDK está instalado e acessível no terminal (dotnet --version)
 
 O terminal tem permissão para criar arquivos e pastas 
+
 
 
