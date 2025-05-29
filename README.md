@@ -1,7 +1,7 @@
 # automatiza-criacao-sln-api
 Scripts para automatizar a criação de soluções .Net
 
-✅ Passo 1: Usar o Git Bash
+✅ Passo 1: 
 Instale o Git Bash (se ainda não tiver):
 https://git-scm.com/downloads
 
